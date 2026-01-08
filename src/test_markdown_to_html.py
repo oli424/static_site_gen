@@ -1,6 +1,6 @@
 import unittest
 from markdown_blocks import markdown_to_blocks
-from markdown_html_node import markdown_to_html_node
+from markdown_html_node import extract_title, markdown_to_html_node
 
 
 class TestMarkdownToHtmlNode(unittest.TestCase):
@@ -140,3 +140,57 @@ line **two**
         expected_html = ("<div><h1>This is a <b>bold</b> heading</h1><h2>This is a smaller <i>italic</i> heading</h2></div>")
         html_node = markdown_to_html_node(md)
         self.assertEqual(html_node.to_html(), expected_html)
+
+
+class TestExtractTitle(unittest.TestCase):
+
+    def test_extract_title(self):
+        md = """
+# My Document Title
+Some paragraph text.
+```print("Hello")```
+> A quote here.
+- List item
+"""
+        title = extract_title(md)
+        self.assertEqual(title, "My Document Title")
+    
+    def test_no_title(self):
+        md = """
+Some paragraph text.
+```print("Hello")```
+
+> A quote here.
+- List item
+"""
+        with self.assertRaises(Exception) as context:
+            extract_title(md)
+        self.assertEqual(str(context.exception), "No heading found in markdown")
+
+    def test_title_with_leading_spaces(self):
+        md = """
+   #   Title with Spaces
+Some paragraph text.
+"""
+        title = extract_title(md)
+        self.assertEqual(title, "Title with Spaces")
+
+    def test_multiple_headings(self):
+        md = """
+# First Title
+```print("Hello")```
+## Second Title
+Some paragraph text.
+"""
+        title = extract_title(md)
+        self.assertEqual(title, "First Title")
+    
+    def test_no_h1(self):
+        md = """
+## Subtitle Only
+```print("Hello")```
+Some paragraph text.
+"""
+        with self.assertRaises(Exception) as context:
+            extract_title(md)
+        self.assertEqual(str(context.exception), "No heading found in markdown")
