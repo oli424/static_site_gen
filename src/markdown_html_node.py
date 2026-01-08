@@ -99,27 +99,29 @@ def extract_title(markdown):
                 return text
     raise Exception("No heading found in markdown")
 
-def generate_page(from_path, template_path, dest_path):
-    print(f"Generating page from {from_path} to {dest_path}using {template_path}")
-    md_content = open(from_path, "r").read()
+def generate_page(basepath, template_path, dest_path):
+    print(f"Generating page from {basepath} to {dest_path}using {template_path}")
+    md_content = open(basepath, "r").read()
     template_content = open(template_path, "r").read()
     html_string = markdown_to_html_node(md_content).to_html()
     title = extract_title(md_content)
     final_content = template_content.replace("{{ Title }}", title).replace("{{ Content }}", html_string)
+    final_content = final_content.replace('href="/', f'href="{basepath}')
+    final_content = final_content.replace('src="/', f'src="{basepath}')
     if not os.path.exists(os.path.dirname(dest_path)):
         os.makedirs(os.path.dirname(dest_path))
     with open(dest_path, "w") as f:
         f.write(final_content)
 
-def generate_pages_recursive(dir_path_content, dir_path_template, dest_dir_path):
-    for file in os.listdir(dir_path_content):
-        if os.path.isfile(os.path.join(dir_path_content, file)):
+def generate_pages_recursive(basepath, dir_path_template, dest_dir_path):
+    for file in os.listdir(basepath):
+        if os.path.isfile(os.path.join(basepath, file)):
             if file.endswith(".md"):
-                from_path = os.path.join(dir_path_content, file)
+                from_path = os.path.join(basepath, file)
                 dest_path = os.path.join(dest_dir_path, file[:-3] + ".html")
                 generate_page(from_path, dir_path_template, dest_path)
-        elif os.path.isdir(os.path.join(dir_path_content, file)):
-            new_dir_path_content = os.path.join(dir_path_content, file)
+        elif os.path.isdir(os.path.join(basepath, file)):
+            new_basepath = os.path.join(basepath, file)
             new_dest_dir_path = os.path.join(dest_dir_path, file)
-            generate_pages_recursive(new_dir_path_content, dir_path_template, new_dest_dir_path)
+            generate_pages_recursive(new_basepath, dir_path_template, new_dest_dir_path)
     
