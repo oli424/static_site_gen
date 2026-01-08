@@ -1,6 +1,8 @@
 import unittest
 
 from markdown_blocks import BlockType, markdown_to_blocks, block_to_block_type
+from markdown_html_node import markdown_to_html_node
+from htmlnode import ParentNode, LeafNode
 
 class TestMarkdownToBlocks(unittest.TestCase):
 
@@ -8,7 +10,7 @@ class TestMarkdownToBlocks(unittest.TestCase):
         md = """
 This is **bolded** paragraph
 
-This is another paragraph with _italic_ text and `code` here
+This is another paragraph with _italic_ text and ```code``` here
 This is the same paragraph on a new line
 
 - This is a list
@@ -20,7 +22,7 @@ This is the same paragraph on a new line
             blocks,
             [
                 "This is **bolded** paragraph",
-                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "This is another paragraph with _italic_ text and ```code``` here\nThis is the same paragraph on a new line",
                 "- This is a list\n- with items",
             ],
         )
@@ -98,7 +100,7 @@ and this too```
         )
     
 
-    def test_unordered_list(self):
+    def test_ulist(self):
         md = """
 - item 1
 - item 2
@@ -115,12 +117,12 @@ and this too```
         for block in blocks:
             blocktypes.append(block_to_block_type(block))
         self.assertListEqual(blocktypes, 
-            [BlockType.UNORDERED_LIST, BlockType.PARAGRAPH,
+            [BlockType.ULIST, BlockType.PARAGRAPH,
              BlockType.PARAGRAPH]
             )
         
     
-    def test_ordered_list(self):
+    def test_olist(self):
         md = """
 1. item
 2. item
@@ -139,7 +141,7 @@ c. item
         for block in blocks:
             blocktypes.append(block_to_block_type(block))
         self.assertListEqual(blocktypes, 
-            [BlockType.ORDERED_LIST, BlockType.PARAGRAPH,
+            [BlockType.OLIST, BlockType.PARAGRAPH,
              BlockType.PARAGRAPH]
             )
         
@@ -173,6 +175,58 @@ War, what is it good for?
         for block in blocks:
             blocktypes.append(block_to_block_type(block))
         self.assertListEqual(blocktypes, 
-            [BlockType.HEADING, BlockType.HEADING, BlockType.PARAGRAPH, BlockType.UNORDERED_LIST,
-             BlockType.PARAGRAPH, BlockType.ORDERED_LIST, BlockType.QUOTE, BlockType.CODE,
+            [BlockType.HEADING, BlockType.HEADING, BlockType.PARAGRAPH, BlockType.ULIST,
+             BlockType.PARAGRAPH, BlockType.OLIST, BlockType.QUOTE, BlockType.CODE,
              BlockType.PARAGRAPH])
+        
+
+class TestMarkdownToHtmlNode(unittest.TestCase):
+
+    def test_block_split(self):
+        md = """
+# This is the header title
+
+### This is smaller header
+
+Here is a list of some kind:
+
+- item
+- item
+- item
+
+Here is another list but ordered:
+
+1. item
+2. item
+3. item
+
+>This list is perfect -Olivier Gaudet
+
+```Code for world domination
+print(hello, world!)```
+
+War, what is it good for?
+"""
+        self.assertEqual(markdown_to_html_node(md), 
+            ParentNode("div", [
+                ParentNode("h1", [LeafNode(None, "This is the header title")]),
+                ParentNode("h3", [LeafNode(None, "This is smaller header")]),
+                ParentNode("p", [LeafNode(None, "Here is a list of some kind:")]),
+                ParentNode("ul", [
+                    ParentNode("li", [LeafNode(None, "item")]),
+                    ParentNode("li", [LeafNode(None, "item")]),
+                    ParentNode("li", [LeafNode(None, "item")]),
+                ]),
+                ParentNode("p", [LeafNode(None, "Here is another list but ordered:")]),
+                ParentNode("ol", [
+                    ParentNode("li", [LeafNode(None, "item")]),
+                    ParentNode("li", [LeafNode(None, "item")]),
+                    ParentNode("li", [LeafNode(None, "item")]),
+                ]),
+                ParentNode("blockquote", [LeafNode(None, "This list is perfect -Olivier Gaudet")]),
+                ParentNode("pre", [
+                    ParentNode("code", [LeafNode(None, "Code for world domination\nprint(hello, world!)\n")])
+                ]),
+                ParentNode("p", [LeafNode(None, "War, what is it good for?")]),
+            ])
+        )
