@@ -15,7 +15,7 @@ def main():
     copy_source_to_dest(dir_path_static, dir_path_docs)
 
     basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
-    generate_pages_recursive("./content", "./template.html", "./docs")
+    generate_pages_recursive("./content", "./template.html", "./docs", basepath)
 
     
 
